@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Recent Expenses</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2>All Expenses</h2>
+    <p style="color:var(--text-muted); margin-bottom:24px;">Complete ledger of your group expenses.</p>
+
+    <div class="card">
+        <h3>Ledger</h3>
+        <ul class="list-group" style="margin-top: 16px;">
+            <li class="list-item" th:if="${expenses == null || expenses.size() == 0}" style="justify-content:center; color:#9ca3af; font-style:italic;">
+                No expenses found.
+            </li>
+            <li class="list-item" th:each="expense : ${expenses}">
+                <div class="item-left">
+                    <strong th:text="${expense.description}">Description</strong>
+                    <span th:text="${expense.group.name} + ' • Paid by ' + ${expense.paidBy.name}">Group Info</span>
+                </div>
+                <div class="item-right">
+                    <strong style="color: var(--danger);" th:text="'₹' + ${expense.totalAmount}">Amount</strong>
+                    <span th:text="${#temporals.format(expense.createdAt, 'dd MMM yyyy')}">Date</span>
+                </div>
+            </li>
+        </ul>
+    </div>
+</div>
+</body>
+</html>

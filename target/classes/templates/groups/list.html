@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>My Groups</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2>My Groups</h2>
+    <p style="color:var(--text-muted); margin-bottom:24px;">Manage your expense sharing groups.</p>
+
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+
+    <div class="dash-row">
+        <!-- Add Group -->
+        <div class="card">
+            <h3 style="margin-bottom: 20px;">➕ Create New Group</h3>
+            <form th:action="@{/groups/create}" method="post">
+                <div class="form-group">
+                    <label>Group Name</label>
+                    <input type="text" name="name" placeholder="e.g. Goa Trip 2026" required>
+                </div>
+                <div class="form-group">
+                    <label>Add Participants (optional)</label>
+                    <input type="text" name="participants" placeholder="Comma separated usernames (e.g. bob, charlie)">
+                    <span class="helper-text">They will automatically receive an alert and see this group!</span>
+                </div>
+                <button type="submit" class="btn-primary">Create Group</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>Your Groups List</h3>
+            <ul class="list-group" style="margin-top: 16px;">
+                <li class="list-item" th:if="${groups == null || groups.size() == 0}" style="justify-content:center; color:#9ca3af; font-style:italic;">
+                    No groups found. Create one to get started!
+                </li>
+                <li th:each="g : ${groups}" class="list-item">
+                    <div class="item-left">
+                        <a th:href="@{/groups/{id}(id=${g.id})}" style="color: inherit; text-decoration: none;">
+                            <strong th:text="${g.name}">Group Name</strong>
+                        </a>
+                        <span th:text="'Created on: ' + ${#temporals.format(g.createdAt, 'dd MMM yyyy')} + ' • ' + ${g.members.size()} + ' Members'">Date</span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+</body>
+</html>

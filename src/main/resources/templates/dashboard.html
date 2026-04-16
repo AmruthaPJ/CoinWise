@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Dashboard</title>
+</head>
+<body>
+<div layout:fragment="content">
+    
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+
+    <div class="dash-row">
+        <!-- Total Spent Card -->
+        <div class="card">
+            <div class="card-title">TOTAL SPENT</div>
+            <div class="card-value" th:text="'₹' + ${#numbers.formatDecimal(budget != null ? budget.currentSpent : 0.0, 1, 'COMMA', 2, 'POINT')}">₹0.00</div>
+            <div class="card-sub">All Active Groups</div>
+        </div>
+
+        <!-- Budget Limit Card -->
+        <div class="card">
+            <div class="card-title">BUDGET LIMIT</div>
+            <div class="card-value" th:text="'₹' + ${#numbers.formatDecimal(budget != null ? budget.limitAmount : 0.0, 1, 'COMMA', 2, 'POINT')}">₹5,000.00</div>
+            <div class="card-sub">
+                Status: 
+                <span th:if="${budget == null || !budget.isExceeded}" class="badge badge-success">Safe</span>
+                <span th:if="${budget != null && budget.isExceeded}" class="badge badge-danger">Exceeded</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="dash-row">
+        <!-- Add Expense -->
+        <div class="card">
+            <h3 style="margin-bottom: 20px;">➕ Add New Expense</h3>
+            <form th:action="@{/expenses/add}" method="post">
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" name="description" placeholder="e.g. Dinner at Taj" required>
+                </div>
+                <div class="form-group">
+                    <label>Amount (₹)</label>
+                    <input type="number" name="totalAmount" step="0.01" placeholder="0.00" required>
+                </div>
+                <div class="form-group" id="groupFieldDiv">
+                    <label>Group</label>
+                    <select name="groupId" id="groupIdSelect" required onchange="renderDynamicInputs()">
+                        <option value="">Select a Group...</option>
+                        <option th:each="g : ${groups}" th:value="${g.id}" th:text="${g.name}"></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Split Strategy</label>
+                    <select name="splitType" id="splitTypeSelect" required onchange="renderDynamicInputs()">
+                        <option value="EQUAL">Equal Split (EQUAL)</option>
+                        <option value="EXACT">Exact Split (EXACT)</option>
+                        <option value="PERCENTAGE">Percentage Split (PERCENTAGE)</option>
+                    </select>
+                    <span class="helper-text">Select how this expense should be divided.</span>
+                </div>
+                
+                <div id="dynamicSplitParamsDiv" style="margin-top:20px; margin-bottom: 20px;">
+                    <!-- Injected by JavaScript -->
+                </div>
+
+                <!-- Hidden data store for group members to avoid thymeleaf inline JS crashes -->
+                <div id="hiddenGroupData" style="display:none;">
+                    <div th:each="g : ${groups}" th:id="'group-members-' + ${g.id}">
+                        <span th:each="m : ${g.members}" class="group-member" 
+                              th:attr="data-id=${m.id},data-name=${m.name}"></span>
+                    </div>
+                </div>
+
+                <script>
+                    function renderDynamicInputs() {
+                        var splitType = document.getElementById('splitTypeSelect').value;
+                        var groupIdSelect = document.getElementById('groupIdSelect');
+                        var groupId = groupIdSelect.value;
+                        var container = document.getElementById('dynamicSplitParamsDiv');
+                        var groupFieldDiv = document.getElementById('groupFieldDiv');
+                        
+                        groupFieldDiv.style.display = 'block';
+                        groupIdSelect.required = true;
+                        
+                        container.innerHTML = '';
+                        
+                        // If exact or percentage, render member inputs explicitly
+                        if ((splitType === 'EXACT' || splitType === 'PERCENTAGE') && groupId) {
+                            var membersDiv = document.getElementById('group-members-' + groupId);
+                            if (membersDiv) {
+                                var heading = document.createElement('h4');
+                                heading.innerText = 'Specify ' + splitType + ' Amounts:';
+                                heading.style.marginBottom = '12px';
+                                container.appendChild(heading);
+
+                                var members = membersDiv.getElementsByClassName('group-member');
+                                for (var i = 0; i < members.length; i++) {
+                                    var md = members[i];
+                                    var memberId = md.getAttribute('data-id');
+                                    var memberName = md.getAttribute('data-name');
+
+                                    var row = document.createElement('div');
+                                    row.className = 'form-group';
+                                    row.style.display = 'flex';
+                                    row.style.alignItems = 'center';
+                                    row.style.gap = '10px';
+                                    row.style.marginBottom = '8px';
+
+                                    var label = document.createElement('label');
+                                    label.innerText = memberName;
+                                    label.style.flex = '1';
+                                    label.style.marginBottom = '0';
+
+                                    // Hidden user ID input tying this param to the member
+                                    var hiddenInput = document.createElement('input');
+                                    hiddenInput.type = 'hidden';
+                                    hiddenInput.name = 'userIds';
+                                    hiddenInput.value = memberId;
+
+                                    // Param input
+                                    var paramInput = document.createElement('input');
+                                    paramInput.type = 'number';
+                                    paramInput.step = '0.01';
+                                    paramInput.name = 'splitParams';
+                                    paramInput.placeholder = splitType === 'PERCENTAGE' ? '%' : '₹';
+                                    paramInput.required = true;
+                                    paramInput.style.flex = '2';
+
+                                    row.appendChild(label);
+                                    row.appendChild(hiddenInput);
+                                    row.appendChild(paramInput);
+                                    container.appendChild(row);
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Boot up any default state
+                    window.onload = renderDynamicInputs;
+                </script>
+
+                <button type="submit" class="btn-primary">Split Expense</button>
+            </form>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="card">
+            <h3 style="margin-bottom: 20px;">📜 Recent Activity</h3>
+            <ul class="list-group">
+                <li th:if="${#lists.isEmpty(recentExpenses)}" class="list-item" style="justify-content:center; color:#9ca3af; font-style:italic;">
+                    No recent expenses
+                </li>
+                <li th:each="exp : ${recentExpenses}" class="list-item">
+                    <div class="item-left">
+                        <strong th:text="${exp.description}">Expense Name</strong>
+                        <span th:text="'Split: ' + ${exp.splitType}">Split: EQUAL</span>
+                    </div>
+                    <div class="item-right" th:text="'- ₹' + ${#numbers.formatDecimal(exp.totalAmount, 1, 'COMMA', 2, 'POINT')}">
+                        - ₹0.00
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+</body>
+</html>

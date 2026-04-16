@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle} != null ? ${pageTitle} + ' - CoinWise' : 'CoinWise'"></title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="sidebar">
+        <div>
+            <div class="brand">
+                🌍 CoinWise
+            </div>
+            <ul class="nav-links">
+                <li th:classappend="${activeNav == 'dashboard'} ? 'active'"><a th:href="@{/dashboard}">Dashboard</a></li>
+                <li th:classappend="${activeNav == 'groups'} ? 'active'"><a th:href="@{/groups}">My Groups</a></li>
+                <li th:classappend="${activeNav == 'expenses'} ? 'active'"><a th:href="@{/expenses}">Recent Expenses</a></li>
+                <li th:classappend="${activeNav == 'settings'} ? 'active'"><a th:href="@{/settings}">Settings</a></li>
+            </ul>
+        </div>
+        <div class="sidebar-footer">
+            Built with ♥ by Team CoinWise<br>PES University 2026<br><br>
+            <form th:action="@{/auth/logout}" method="post">
+                <button type="submit" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:600;">Logout</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="main-wrapper">
+        <div class="topbar">
+            <h1 th:text="${pageTitle}">Dashboard</h1>
+            <div class="user-snippet" th:if="${#authorization.expression('isAuthenticated()')}">
+                Welcome, <span th:text="${#authentication.name}">User</span> 👋
+                <div class="avatar" th:text="${#strings.substring(#authentication.name,0,1).toUpperCase()}">U</div>
+            </div>
+        </div>
+
+        <div class="content" layout:fragment="content">
+            <!-- Child templates injected here -->
+        </div>
+    </div>
+</body>
+</html>
